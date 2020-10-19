@@ -1,3 +1,3 @@
 FROM python:3.8
-COPY backup-server /
+COPY company-server /
 ENTRYPOINT ["/bin/sh"]

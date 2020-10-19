@@ -3,8 +3,7 @@
 import logging
 import os
 
-from backup_server.backup_server import BackupServer
-
+from company_server.company_server import CompanyServer
 
 def parse_config_params():
     """ Parse env variables to find program config params
@@ -17,8 +16,8 @@ def parse_config_params():
 	"""
     config_params = {}
     try:
-        config_params["external_requests_port"] = int(os.environ["SERVER_PORT"])
-        config_params["listen_backlog"] = int(os.environ["SERVER_LISTEN_BACKLOG"])
+        config_params["backup_requests_port"] = int(os.environ["BACKUP_REQUESTS_PORT"])
+        config_params["listen_backlog"] = int(os.environ["COMPANY_LISTEN_BACKLOG"])
     except KeyError as e:
         raise KeyError("Key was not found. Error: {} .Aborting backup_server".format(e))
     except ValueError as e:
@@ -31,7 +30,7 @@ def main():
     initialize_log()
     config_params = parse_config_params()
 
-    server = BackupServer(config_params["external_requests_port"], config_params["listen_backlog"])
+    server = CompanyServer(config_params["backup_requests_port"], config_params["listen_backlog"])
     server.run()
 
 
