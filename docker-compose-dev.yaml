@@ -21,6 +21,8 @@ services:
       - COMPANY_LISTEN_BACKLOG=5
     networks:
       - company_net
+    volumes:
+    - "./volumes/company_server_1:/files"
 
 networks:
   company_net:

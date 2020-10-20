@@ -7,11 +7,11 @@ from middleware_company_server.company_backup_middleware import CompanyBackupMid
 
 class CompanyServer:
     def __init__(self, backup_request_port: int, listen_backlog: int):
-        new_process = Process(target=self._launch_backup_middleware, args=(backup_request_port, listen_backlog,))
+        new_process = Process(target=self._launch_backup_middleware, args=(backup_request_port, listen_backlog, 10,))
         new_process.start()
 
-    def _launch_backup_middleware(self, backup_request_port: int, listen_backlog: int):
-        CompanyBackupMiddleware(backup_request_port, listen_backlog)
+    def _launch_backup_middleware(self, backup_request_port: int, listen_backlog: int, files_to_compress: int):
+        CompanyBackupMiddleware(backup_request_port, listen_backlog, files_to_compress)
 
     def run(self):
         while True:
