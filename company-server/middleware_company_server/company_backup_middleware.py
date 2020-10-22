@@ -1,7 +1,9 @@
 import socket
 import logging
 import json
+import traceback
 
+from multiprocessing import Process
 from middleware_company_server.file_compressor import FileCompressor
 
 
@@ -33,6 +35,8 @@ class CompanyBackupMiddleware:
             logging.error("Error reading socket {}".format(connection))
             connection.send('There was an error reading the socket'.encode('utf-8'))
 
+
+
     def _process_backup_request(self, connection, backup_request):
         backup_request = json.loads(backup_request)
         if backup_request['type'] == self.HEALTH_CHECK_REQUEST_TYPE:
@@ -41,12 +45,15 @@ class CompanyBackupMiddleware:
         else:
             logging.info("Starting to process backup request.")
             try:
-                compressed_files = self._file_compressor.compress_files(backup_request['path'],
-                                                                        backup_request['server_alias'])
-                connection.sendall(bytes(str(compressed_files), encoding='utf-8'))
+                compressed_file_path = self._file_compressor.compress_files(backup_request['path'],
+                                                     backup_request['server_alias'])
+                sending_process = Process(target=self._send_backup_to_server, args=(connection, compressed_file_path,))
+                sending_process.start()
+
             except FileNotFoundError:
-                logging.error("File not found error. Invalid path: {}".format(FileNotFoundError))
+                traceback.print_exc()
                 connection.sendall(bytes(self.PATH_NOT_FOUND_RESPONSE, encoding='utf-8'))
+            #Sacar este finally que si no le va a cerrar la conexion.
             finally:
                 logging.info("Closing connection.")
                 connection.close()
@@ -58,4 +65,18 @@ class CompanyBackupMiddleware:
             logging.info("Address: {}".format(address))
             backup_request = self._wait_for_backup_request(connection)
             self._process_backup_request(connection, backup_request)
+
+    def _send_backup_to_server(self, connection, compressed_file_path):
+        with open(compressed_file_path, "rb") as tar_gz_file:
+            continue_reading = True
+            while continue_reading:
+                b = tar_gz_file.read(2047)
+                b = bytes(1) + b
+                print("Byte lentgh", len(b))
+                connection.sendall(b)
+                if len(b) < 2048:
+                    continue_reading = False
+
+
+
 
