@@ -2,7 +2,7 @@ import socket
 import json
 import logging
 
-from middleware_backup_server.utils import padd_to_specific_size
+from controllers.utils import padd_to_specific_size
 
 
 class ExternalRequestIntegrityChecker:

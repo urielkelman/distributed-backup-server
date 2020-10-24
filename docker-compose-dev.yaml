@@ -7,8 +7,9 @@ services:
     environment:
       - PYTHONUNBUFFERED=1
       - SERVER_IP=backup_server
-      - SERVER_PORT=12345
+      - BACKUP_REQUESTS_PORT=12345
       - SERVER_LISTEN_BACKLOG=5
+      - NODE_REGISTER_PORT=12346
     networks:
       - company_net
 
@@ -23,6 +24,34 @@ services:
       - company_net
     volumes:
     - "./volumes/company_server_1:/files"
+
+  backuper_worker_1:
+    container_name: backuper_worker_1
+    image: backuper-worker:latest
+    entrypoint: python3 /main.py
+    environment:
+      - SERVER_IP=backup_server
+      - SERVER_NODE_REGISTER_PORT=12346
+      - WORKER_ALIAS=backuper_worker_1
+      - WORKER_INITIAL_PORT=12345
+      - WORKER_PROCESSES=2
+      - WORKER_LISTEN_BACKLOG=5
+    networks:
+      - company_net
+    depends_on:
+      - server
+
+  #backuper_worker_2:
+   # container_name: backuper_worker_2
+   # image: backuper-worker:latest
+   # entrypoint: python3 /main.py
+   # environment:
+   #   - SERVER_IP=server
+   #   - SERVER_NODE_REGISTER_PORT=12346
+   #   - WORKER_ALIAS=backuper_worker_2
+   #   - BACKUP_INITIAL_PORT=12345
+   #   - WORKER_PROCESSES=2
+   #   - WORKER_LISTEN_BACKLOG=5
 
 networks:
   company_net:

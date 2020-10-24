@@ -7,6 +7,7 @@ all:
 docker-image:
 	docker build -f ./backup-server/Dockerfile -t "backup-server:latest" .
 	docker build -f ./company-server/Dockerfile -t "company-server:latest" .
+	docker build -f ./backuper-worker/Dockerfile -t "backuper-worker:latest" .
 .PHONY: docker-image
 
 docker-compose-up: docker-image

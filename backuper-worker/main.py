@@ -17,7 +17,7 @@ def parse_config_params():
     try:
         config_params["backup_server_ip"] = os.environ["SERVER_IP"]
         config_params["backup_server_port"] = int(os.environ["SERVER_NODE_REGISTER_PORT"])
-        config_params["worker_first_port"] = int(os.environ["BACKUP_INITIAL_PORT"])
+        config_params["worker_first_port"] = int(os.environ["WORKER_INITIAL_PORT"])
         config_params["worker_processes"] = int(os.environ["WORKER_PROCESSES"])
         config_params["listen_backlog"] = int(os.environ["WORKER_LISTEN_BACKLOG"])
     except KeyError as e:

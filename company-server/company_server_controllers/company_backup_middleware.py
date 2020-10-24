@@ -4,7 +4,7 @@ import json
 import traceback
 
 from multiprocessing import Process
-from middleware_company_server.file_compressor import FileCompressor
+from company_server_controllers.file_compressor import FileCompressor
 
 
 class CompanyBackupMiddleware:

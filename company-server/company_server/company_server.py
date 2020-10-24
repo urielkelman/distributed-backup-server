@@ -2,7 +2,7 @@ import logging
 from multiprocessing import Process
 from time import sleep
 
-from middleware_company_server.company_backup_middleware import CompanyBackupMiddleware
+from company_server_controllers.company_backup_middleware import CompanyBackupMiddleware
 
 
 class CompanyServer:
