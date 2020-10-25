@@ -1,18 +1,21 @@
 import socket
 import json
+import sys
+
 
 def padd_to_specific_size(bytes_data, size):
     if len(bytes_data) > size:
         raise ValueError("Final size should be larger than data size to padd.")
     return bytes("0" * (size - len(bytes_data)) + bytes_data, encoding='utf-8')
 
+
 def main():
     example = {
         "type": "register",
-        "node": "company_server_1",
-        "node_port": 12345,
-        "path": "/asd",
-        "frequency": 1
+        "node": sys.argv[1],
+        "node_port": int(sys.argv[2]),
+        "path": sys.argv[3],
+        "frequency": int(sys.argv[4])
     }
 
     BYTES_AMOUNT_REQUEST_SIZE_INDICATION = 20
@@ -26,6 +29,7 @@ def main():
     connection.sendall(data_bytes)
     response = connection.recv(2048).rstrip()
     print(response)
+
 
 if __name__ == "__main__":
     main()
