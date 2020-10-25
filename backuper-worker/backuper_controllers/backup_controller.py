@@ -1,59 +1,75 @@
 import logging
+import os
 import socket
-import json
 import traceback
 
-import controllers.responses as responses
-from controllers.utils import padd_to_specific_size
+import network.responses as responses
+from backuper_requesters.node_backup_requester import NodeBackupRequester
+from network.json_receiver import JsonReceiver
+from network.json_sender import JsonSender
 
 
 class BackupController:
-    BYTES_AMOUNT_REQUEST_SIZE_INDICATION = 20
-
     def __init__(self, port: int, listen_backlog: int):
-        self._external_requests_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        self._external_requests_socket.bind(('', port))
-        self._external_requests_socket.listen(listen_backlog)
+        self._backup_requests_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        self._backup_requests_socket.bind(('', port))
+        self._backup_requests_socket.listen(listen_backlog)
         self._active_external_request_connection = None
 
-    def _wait_for_backup_request(self, connection: socket.socket):
-        request_size = int(connection.recv(self.BYTES_AMOUNT_REQUEST_SIZE_INDICATION).decode('utf-8'))
-        logging.info("Going to listen for a request that contains {} bytes".format(request_size))
-        external_request = connection.recv(request_size)
-        logging.info('Request received from connection {}. Msg: {}'.format(connection.getpeername(),
-                                                                           external_request))
-        return json.loads(external_request.decode('utf-8'))
+    @staticmethod
+    def _successful_backup_response(timestamp):
+        return {
+            'status': 'ok',
+            'time': timestamp
+        }
+
+    @staticmethod
+    def _error_response(error):
+        return {
+            'status': 'error',
+            'cause': error
+        }
+
+    @staticmethod
+    def _unnecessary_backup_response():
+        return {
+            'status': 'ok',
+            'time': None
+        }
 
     def _accept_new_backup_request(self):
-        logging.info("Proceed to receive new external request.")
-        connection, address = self._external_requests_socket.accept()
+        logging.info("Proceed to receive new backup request from backup server.")
+        connection, address = self._backup_requests_socket.accept()
         logging.info("Address: {}".format(address))
-        external_request = self._wait_for_backup_request(connection)
+        backup_request = JsonReceiver.receive_json(connection)
         self._active_external_request_connection = connection
-        return external_request
+        return backup_request
 
-    def get_registration_request(self):
+    def _send_response(self, response):
+        JsonSender.send_json(self._active_external_request_connection, response)
+
+    def process_backup_request(self):
         try:
-            external_request = self._accept_new_backup_request()
-            self._active_external_request_connection.sendall(padd_to_specific_size(str(len(responses.OK_RESPONSE)),
-                                                                                   self.BYTES_AMOUNT_REQUEST_SIZE_INDICATION))
-            self._active_external_request_connection.sendall(responses.OK_RESPONSE)
-            return external_request
+            backup_request = self._accept_new_backup_request()
+            has_backuped, timestamp, error = NodeBackupRequester.generate_backup(backup_request['node'],
+                                                                                 backup_request['node_port'],
+                                                                                 backup_request['path'])
+
+            if has_backuped:
+                self._send_response(self._successful_backup_response(timestamp))
+            elif error:
+                self._send_response(self._error_response(error))
+            else:
+                self._send_response(self._unnecessary_backup_response())
 
         except OSError:
-            logging.error("OS Error ocurred.")
+            logging.error("OS Error ocurred. Pid: {}".format(os.getpid()))
             traceback.print_exc()
-            self._active_external_request_connection.sendall(
-                padd_to_specific_size(str(len(responses.OS_ERROR_RESPONSE)),
-                                      self.BYTES_AMOUNT_REQUEST_SIZE_INDICATION))
-            self._active_external_request_connection.sendall(responses.OS_ERROR_RESPONSE)
+            self._send_response(responses.OS_ERROR_RESPONSE)
         except:
             logging.error("Unexpected error ocurred: ")
             traceback.print_exc()
-            self._active_external_request_connection.sendall(
-                padd_to_specific_size(str(len(responses.OS_ERROR_RESPONSE)),
-                                      self.BYTES_AMOUNT_REQUEST_SIZE_INDICATION))
-            self._active_external_request_connection.sendall(responses.UNKNOWN_ERROR_RESPONSE)
+            self._send_response(responses.UNKNOWN_ERROR_RESPONSE)
 
         finally:
             self._active_external_request_connection.close()

@@ -25,14 +25,18 @@ class BackupServer:
         backup_process_process.start()
 
     @staticmethod
-    def _launch_backup_scheduler(backup_request_queue):
-        backup_scheduler_process = Process(target=BackupScheduler.start_backups, args=(backup_request_queue,))
+    def _launch_backup_scheduler(backup_request_queue, backuper_registration_queue):
+        backup_scheduler_process = Process(target=BackupScheduler.start_backups, args=(backup_request_queue,
+                                                                                       backuper_registration_queue,))
         backup_scheduler_process.start()
 
     def run(self):
         backup_request_queue = Queue()
-        self._launch_backup_scheduler(backup_request_queue)
+        backuper_registration_queue = Queue()
+        self._launch_backup_scheduler(backup_request_queue, backuper_registration_queue)
         self._launch_backup_controller(backup_request_queue)
         while True:
-            external_request = self._backuper_registration_controller.get_registration_request()
-            logging.info("Backuper registration request: {}".format(external_request))
+            backuper_registration_request = self._backuper_registration_controller.get_registration_request()
+            logging.info("Backuper registration request: {}".format(backuper_registration_request))
+            backuper_registration_queue.put(backuper_registration_request)
+

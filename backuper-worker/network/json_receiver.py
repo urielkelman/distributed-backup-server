@@ -17,7 +17,7 @@ class JsonReceiver:
     def receive_json(connection):
         request_size = int(JsonReceiver._receive_fixed_size(connection, BYTES_AMOUNT_REQUEST_SIZE))
         data = JsonReceiver._receive_fixed_size(connection, request_size)
-        logging.info("Request received: {}".format(data))
+        logging.info("Json received: {}".format(data))
         logging.info("Address: {}".format(connection.getpeername()))
 
         return json.loads(data)

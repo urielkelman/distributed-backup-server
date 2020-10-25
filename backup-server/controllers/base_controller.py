@@ -1,52 +1,42 @@
 import logging
 import socket
-import json
 import traceback
 
-import controllers.responses as responses
+import network.responses as responses
+from network.json_receiver import JsonReceiver
+from network.json_sender import JsonSender
 
 
 class BaseRegistrationController:
-    BYTES_AMOUNT_REQUEST_SIZE_INDICATION = 20
-
     def __init__(self, port: int, listen_backlog: int):
         self._external_requests_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self._external_requests_socket.bind(('', port))
         self._external_requests_socket.listen(listen_backlog)
         self._active_external_request_connection = None
 
-    def _wait_for_registration_request(self, connection: socket.socket):
-        request_size = int(connection.recv(self.BYTES_AMOUNT_REQUEST_SIZE_INDICATION).decode('utf'))
-        logging.info("Going to listen for a request that contains {} bytes".format(request_size))
-        external_request = connection.recv(request_size)
-        logging.info('Request received from connection {}. Msg: {}'.format(connection.getpeername(),
-                                                                           external_request))
-        return json.loads(external_request.decode('utf-8'))
-
     def _accept_new_registration_request(self):
         logging.info("Proceed to receive new external request.")
         connection, address = self._external_requests_socket.accept()
         logging.info("Address: {}".format(address))
-        external_request = self._wait_for_registration_request(connection)
+        external_request = JsonReceiver.receive_json(connection)
         self._active_external_request_connection = connection
         return external_request
 
     def get_registration_request(self):
         try:
             external_request = self._accept_new_registration_request()
-            self._active_external_request_connection.send(
-                "Your request has been processed successfully".encode('utf-8'))
+            external_request['requester_ip'] = self._active_external_request_connection.getpeername()
+            JsonSender.send_json(self._active_external_request_connection, responses.OK_RESPONSE)
             return external_request
 
         except OSError:
             logging.error("OS Error ocurred.")
             traceback.print_exc()
-            self._active_external_request_connection.sendall(responses.OS_ERROR_RESPONSE,
-                                                             encoding='utf-8')
+            JsonSender.send_json(self._active_external_request_connection, responses.OS_ERROR_RESPONSE)
         except:
-            logging.error("Error ocurred: ")
+            logging.error("Unexpected error ocurred: ")
             traceback.print_exc()
-            self._active_external_request_connection.sendall(responses.UNKNOWN_ERROR_RESPONSE, encoding='utf-8')
+            JsonSender.send_json(self._active_external_request_connection, responses.UNKNOWN_ERROR_RESPONSE)
 
         finally:
             self._active_external_request_connection.close()

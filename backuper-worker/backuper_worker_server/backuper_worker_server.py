@@ -1,6 +1,6 @@
-import logging
-from time import sleep
 from multiprocessing import Process
+
+from backuper_controllers.backup_controller import BackupController
 from backuper_requesters.worker_registration_requester import WorkerRegistrationRequester
 
 class BackuperWorkerServer:
@@ -15,6 +15,9 @@ class BackuperWorkerServer:
     @staticmethod
     def _start_worker(backup_server_ip, backup_server_port, worker_process_port, listen_backlog):
         WorkerRegistrationRequester.register_worker(backup_server_ip, backup_server_port, worker_process_port)
+        backup_controller = BackupController(worker_process_port, listen_backlog)
+        while True:
+            backup_controller.process_backup_request()
 
     def run(self):
         for i in range(self._worker_processes):
