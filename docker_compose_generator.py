@@ -21,7 +21,6 @@ services:
       - NODE_REGISTER_PORT=12346
       - BACKUP_INFO_PORT=12347
       - SERVER_LISTEN_BACKLOG=5
-      - REQUEST_THREAD_POOL_SIZE={}
     networks:
       - company_net
       '''

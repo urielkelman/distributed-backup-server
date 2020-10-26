@@ -27,13 +27,13 @@ class BackupScheduler:
                     and (backup_task['last_backup'] is None or BackupScheduler._backup_of_frequency(backup_task)):
                 backup_task['status'] = BackupScheduler.STATUS_RUNNING_BACKUP
                 backup_tasks[(node, node_port, path)] = backup_task
-                a = thread_pool.apply_async(BackupRequester.dispatch_backup, args=(node, node_port, path, backup_tasks,
-                                                                               backups_records, lock_backup_tasks,))
+                backup_request_process = Process(target=BackupRequester.dispatch_backup,
+                                                 args=(node, node_port, path, backup_tasks, backups_records,
+                                                       lock_backup_tasks,))
+                backup_request_process.start()
 
-                logging.info("sdasdas {}".format(a))
     @staticmethod
     def start_backups(backup_request_queue, backuper_registration_queue, listen_backlog, query_port, thread_pool_size):
-        logging.info("Creating threadpool for requests of size: {}".format(thread_pool_size))
         request_thread_pool = Pool(processes=thread_pool_size)
         backups_record = Manager().dict()
         BackupScheduler._launch_query_controller(backups_record, listen_backlog, query_port)
@@ -71,8 +71,7 @@ class BackupScheduler:
                             backups_by_worker[node][node_port] -= 1
                             logging.info("Unregistered backup task for node: {} and path: {}".format(node, path))
 
-            BackupScheduler._check_and_launch_backups(backup_tasks, backups_record, lock_backup_tasks,
-                                                      request_thread_pool)
+            BackupScheduler._check_and_launch_backups(backup_tasks, backups_record, lock_backup_tasks, request_thread_pool)
 
     @staticmethod
     def _select_worker_for_backup_task(backups_by_worker):
