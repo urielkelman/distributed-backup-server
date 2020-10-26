@@ -17,10 +17,12 @@ class BackupController:
         self._active_external_request_connection = None
 
     @staticmethod
-    def _successful_backup_response(timestamp):
+    def _successful_backup_response(timestamp, file_size, file_name):
         return {
             'status': 'ok',
-            'time': timestamp
+            'time': timestamp,
+            'file_size': file_size,
+            'file_name': file_name
         }
 
     @staticmethod
@@ -51,12 +53,13 @@ class BackupController:
     def process_backup_request(self):
         try:
             backup_request = self._accept_new_backup_request()
-            has_backuped, timestamp, error = NodeBackupRequester.generate_backup(backup_request['node'],
-                                                                                 backup_request['node_port'],
-                                                                                 backup_request['path'])
+            has_backuped, timestamp, file_size, file_name, error = \
+                NodeBackupRequester.generate_backup(backup_request['node'],
+                                                    backup_request['node_port'],
+                                                    backup_request['path'])
 
             if has_backuped:
-                self._send_response(self._successful_backup_response(timestamp))
+                self._send_response(self._successful_backup_response(timestamp, file_size, file_name))
             elif error:
                 self._send_response(self._error_response(error))
             else:

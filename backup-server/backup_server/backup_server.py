@@ -6,10 +6,12 @@ from backup_server.backup_scheduler import BackupScheduler
 
 
 class BackupServer:
-    def __init__(self, backup_request_port: int, listen_backlog: int, backuper_register_port: int):
+    def __init__(self, backup_request_port, listen_backlog, backuper_register_port, backup_info_port, thread_pool_size):
         self._backup_request_port = backup_request_port
         self._listen_backlog = listen_backlog
         self._node_register_port = backuper_register_port
+        self._backup_info_port = backup_info_port
+        self._thread_pool_size = thread_pool_size
         self._backuper_registration_controller = BaseRegistrationController(backuper_register_port, listen_backlog)
 
     @staticmethod
@@ -24,10 +26,12 @@ class BackupServer:
                                          args=(backup_request_queue, self._backup_request_port, self._listen_backlog))
         backup_process_process.start()
 
-    @staticmethod
-    def _launch_backup_scheduler(backup_request_queue, backuper_registration_queue):
+    def _launch_backup_scheduler(self, backup_request_queue, backuper_registration_queue):
         backup_scheduler_process = Process(target=BackupScheduler.start_backups, args=(backup_request_queue,
-                                                                                       backuper_registration_queue,))
+                                                                                       backuper_registration_queue,
+                                                                                       self._listen_backlog,
+                                                                                       self._backup_info_port,
+                                                                                       self._thread_pool_size))
         backup_scheduler_process.start()
 
     def run(self):

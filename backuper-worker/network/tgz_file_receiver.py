@@ -15,17 +15,12 @@ class TgzFileReceiver:
         logging.info("Starting to receive file of {} bytes".format(file_size))
         now = datetime.now()
         timestamp = now.strftime(DATETIME_FORMAT)
-        with open((destination_base_path + "/" + timestamp.replace("/", "_") + ".tgz"), "wb") as backup_file:
-            already_received = 0
-            i = 0
+        already_received = 0
+        file_name = destination_base_path + "/" + timestamp.replace("/", "_") + ".tgz"
+        with open(file_name, "wb") as backup_file:
             while already_received < file_size:
                 tgz_bytes = connection.recv(FILE_BUFFER_SIZE)
                 backup_file.write(tgz_bytes)
                 already_received += len(tgz_bytes)
-                if i % 1000 == 0:
-                    logging.info("Iteration {}, received: {}, percentage: {}".format(i, already_received, already_received*100/file_size))
-                    logging.info("Alreday received {}, file size {}".format(already_received, file_size))
-                i += 1
-
             logging.info("Finished receiving backup file.")
-        return timestamp
+        return timestamp, already_received, file_name

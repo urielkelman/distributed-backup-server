@@ -1,9 +1,7 @@
-import json
 import logging
 import socket
 from datetime import datetime
 
-from controllers.utils import padd_to_specific_size
 from network.json_receiver import JsonReceiver
 from network.json_sender import JsonSender
 
@@ -23,7 +21,27 @@ class BackupRequester:
         }
 
     @staticmethod
-    def dispatch_backup(node, node_port, path, backup_tasks):
+    def _save_backup_records(backup_records, node, path, timestamp, file_size, file_name, worker):
+        backup_record = [{
+            'timestamp': timestamp,
+            'file_size': file_size,
+            'file_name': file_name,
+            'worker_ip': worker
+        }]
+        if node not in backup_records:
+            backup_records[node] = {
+                path: backup_record
+            }
+        else:
+            node_records = backup_records[node]
+            if path not in node_records:
+                node_records[path] = backup_record
+            else:
+                node_records[path] += backup_record
+            backup_records[node] = node_records
+
+    @staticmethod
+    def dispatch_backup(node, node_port, path, backup_tasks, backup_records, lock_backup_tasks):
         backup_task = backup_tasks[(node, node_port, path)]
         backup_worker = backup_task['backup_worker']
         logging.info("Launched backup request for node {} at port {} for path {} in worker: {}.". \
@@ -36,10 +54,16 @@ class BackupRequester:
 
         if response['status'] == 'ok' and response['time']:
             backup_task['last_backup'] = datetime.strptime(response['time'], BackupRequester.DATETIME_FORMAT)
+            BackupRequester._save_backup_records(backup_records, node, path, response['time'],
+                                                 response['file_size'], response['file_name'], backup_worker[0])
         elif response['status'] == 'ok' and response['time'] is None:
             backup_task['last_backup'] = datetime.now()
 
         backup_task['status'] = BackupRequester.STATUS_NOT_RUNNING_BACKUP
-        backup_tasks[(node, node_port, path)] = backup_task
+
+        lock_backup_tasks.acquire()
+        if (node, node_port, path) in backup_tasks:
+            backup_tasks[(node, node_port, path)] = backup_task
+        lock_backup_tasks.release()
 
         connection.close()

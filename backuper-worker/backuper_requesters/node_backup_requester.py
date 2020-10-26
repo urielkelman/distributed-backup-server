@@ -6,11 +6,10 @@ from network.tgz_file_receiver import TgzFileReceiver
 from network.json_receiver import JsonReceiver
 from network.json_sender import JsonSender
 
+LAST_BACKUP_FILES = 10
+
 
 class NodeBackupRequester:
-    BYTES_AMOUNT_REQUEST_SIZE_INDICATION = 20
-    DATETIME_FORMAT = "%m/%d/%Y-%H:%M:%S"
-
     @staticmethod
     def _generate_backup_request(path):
         return {
@@ -18,9 +17,20 @@ class NodeBackupRequester:
         }
 
     @staticmethod
+    def _check_and_delete_backups(dir_path_str):
+        file_paths = [x for x in Path(dir_path_str).iterdir()]
+        logging.info("Backup files: {}".format(file_paths))
+        if len(file_paths) <= LAST_BACKUP_FILES:
+            logging.info("It's unnecessary to delete any backup file")
+        else:
+            file_paths.sort(key=lambda x: Path(x).stat().st_mtime, reverse=True)
+            logging.info("Deleting backup file: {}".format(file_paths[-1]))
+            Path(file_paths[-1]).unlink()
+
+    @staticmethod
     def generate_backup(node, node_port, path):
         logging.info("Starting to generate backup for node {} with port {} for path {}".format(node, node_port, path))
-        dir_path_str = "/backups/" + node + "_" + path.replace("/", "_")
+        dir_path_str = "/backups/" + node + "_" + path.replace("/", "_")[1:]
         dir_path = Path(dir_path_str)
         if not dir_path.is_dir():
             dir_path.mkdir()
@@ -33,11 +43,12 @@ class NodeBackupRequester:
         response = JsonReceiver.receive_json(connection)
 
         if response['status'] == 'OK' and response['transfer']:
-            timestamp = TgzFileReceiver.receive_file(connection, dir_path_str)
-            return True, timestamp, None
+            timestamp, file_size, file_name = TgzFileReceiver.receive_file(connection, dir_path_str)
+            NodeBackupRequester._check_and_delete_backups(dir_path_str)
+            return True, timestamp, file_size, file_name, None
         elif response['status'] == 'OK' and not response['transfer']:
             logging.info("It's not necessary to do a backup.")
-            return False, None, None
+            return False, None, None, None, None
         else:
             logging.info('An error ocurred.')
-            return False, None, response['cause']
+            return False, None, None, None, response['cause']

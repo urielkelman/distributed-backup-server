@@ -20,6 +20,7 @@ def parse_config_params():
         config_params["backup_requests_port"] = int(os.environ["BACKUP_REQUESTS_PORT"])
         config_params["listen_backlog"] = int(os.environ["SERVER_LISTEN_BACKLOG"])
         config_params["node_register_port"] = int(os.environ["NODE_REGISTER_PORT"])
+        config_params["backup_info_port"] = int(os.environ["BACKUP_INFO_PORT"])
     except KeyError as e:
         raise KeyError("Key was not found. Error: {} .Aborting backup_server".format(e))
     except ValueError as e:
@@ -33,7 +34,8 @@ def main():
     config_params = parse_config_params()
 
     server = BackupServer(config_params["backup_requests_port"], config_params["listen_backlog"],
-                          config_params["node_register_port"])
+                          config_params["node_register_port"], config_params["backup_info_port"],
+                          config_params["thread_pool_size"])
     server.run()
 
 
