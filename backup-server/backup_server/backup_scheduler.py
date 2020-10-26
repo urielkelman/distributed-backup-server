@@ -7,12 +7,11 @@ from controllers.query_backups_controller import QueryBackupsController
 
 REGISTER_TYPE = 'register'
 UNREGISTER_TYPE = 'unregister'
+STATUS_NOT_RUNNING_BACKUP = 'STATUS_NOT_RUNNING_BACKUP'
+STATUS_RUNNING_BACKUP = 'STATUS_RUNNING_BACKUP'
 
 
 class BackupScheduler:
-    STATUS_NOT_RUNNING_BACKUP = 'STATUS_NOT_RUNNING_BACKUP'
-    STATUS_RUNNING_BACKUP = 'STATUS_RUNNING_BACKUP'
-
     @staticmethod
     def _backup_of_frequency(backup_task):
         now = datetime.now()
@@ -29,7 +28,8 @@ class BackupScheduler:
         while True:
             if not backuper_registration_queue.empty():
                 backuper_registration_request = backuper_registration_queue.get()
-                worker_ip, worker_port = backuper_registration_request['requester_ip'][0], backuper_registration_request['worker_process_port']
+                worker_ip, worker_port = backuper_registration_request['requester_ip'][0], \
+                                         backuper_registration_request['worker_process_port']
                 if worker_ip in backups_by_worker:
                     backups_by_worker[worker_ip][worker_port] = 0
                 else:
@@ -42,7 +42,7 @@ class BackupScheduler:
                 logging.info("Backup scheduler received new backup request: {}".format(str(backup_request)))
                 if backup_request['type'] == REGISTER_TYPE:
                     backup_tasks[(backup_request['node'], backup_request['node_port'], backup_request['path'])] = {
-                        'status': BackupScheduler.STATUS_NOT_RUNNING_BACKUP,
+                        'status': STATUS_NOT_RUNNING_BACKUP,
                         'last_backup': None,
                         'frequency': backup_request['frequency'],
                         'backup_worker': BackupScheduler._select_worker_for_backup_task(backups_by_worker)
@@ -62,9 +62,9 @@ class BackupScheduler:
     def _check_and_launch_backups(backup_tasks, backups_records, lock_backup_tasks):
         for node, node_port, path in backup_tasks:
             backup_task = backup_tasks[(node, node_port, path)]
-            if backup_task['status'] == BackupScheduler.STATUS_NOT_RUNNING_BACKUP \
+            if backup_task['status'] == STATUS_NOT_RUNNING_BACKUP \
                     and (backup_task['last_backup'] is None or BackupScheduler._backup_of_frequency(backup_task)):
-                backup_task['status'] = BackupScheduler.STATUS_RUNNING_BACKUP
+                backup_task['status'] = STATUS_RUNNING_BACKUP
                 backup_tasks[(node, node_port, path)] = backup_task
                 backup_request_process = Process(target=BackupRequester.dispatch_backup,
                                                  args=(node, node_port, path, backup_tasks, backups_records,

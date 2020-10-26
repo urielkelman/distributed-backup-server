@@ -1,14 +1,13 @@
-import json
 import logging
 import socket
 import traceback
-import os
 
 import network.responses as responses
+
+from network.tgz_file_sender import TgzFileSender
 from company_server_controllers.file_compressor import FileCompressor
 from network.json_receiver import JsonReceiver
 from network.json_sender import JsonSender
-from network.tgz_file_sender import TgzFileSender
 
 
 class CompanyBackupMiddleware:

@@ -5,6 +5,7 @@ from network.json_sender import JsonSender
 
 FILE_BUFFER_SIZE = 2048
 
+
 class TgzFileSender:
     @staticmethod
     def _send_fixed_file_size(connection, file_size):
@@ -14,7 +15,7 @@ class TgzFileSender:
     def send_file(connection, compressed_file_path):
         file_size = Path(compressed_file_path).stat().st_size
         TgzFileSender._send_fixed_file_size(connection, file_size)
-        logging.info("Starting to send file in {} iterations.".format(int(file_size/FILE_BUFFER_SIZE)))
+        logging.info("Starting to send file in {} iterations.".format(int(file_size / FILE_BUFFER_SIZE)))
         with open(compressed_file_path, "rb") as tar_gz_file:
             continue_reading = True
             total_bytes_sent = 0

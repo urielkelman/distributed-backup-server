@@ -19,7 +19,6 @@ class NodeBackupRequester:
     @staticmethod
     def _check_and_delete_backups(dir_path_str):
         file_paths = [x for x in Path(dir_path_str).iterdir()]
-        logging.info("Backup files: {}".format(file_paths))
         if len(file_paths) <= LAST_BACKUP_FILES:
             logging.info("It's unnecessary to delete any backup file")
         else:

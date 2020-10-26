@@ -5,13 +5,11 @@ from datetime import datetime
 from network.json_receiver import JsonReceiver
 from network.json_sender import JsonSender
 
+STATUS_NOT_RUNNING_BACKUP = 'STATUS_NOT_RUNNING_BACKUP'
+DATETIME_FORMAT = "%m/%d/%Y-%H:%M:%S"
+
 
 class BackupRequester:
-    BYTES_AMOUNT_REQUEST_SIZE_INDICATION = 20
-    STATUS_NOT_RUNNING_BACKUP = 'STATUS_NOT_RUNNING_BACKUP'
-    STATUS_RUNNING_BACKUP = 'STATUS_RUNNING_BACKUP'
-    DATETIME_FORMAT = "%m/%d/%Y-%H:%M:%S"
-
     @staticmethod
     def _generate_backup_request(node, node_port, path):
         return {
@@ -53,13 +51,13 @@ class BackupRequester:
         response = JsonReceiver.receive_json(connection)
 
         if response['status'] == 'ok' and response['time']:
-            backup_task['last_backup'] = datetime.strptime(response['time'], BackupRequester.DATETIME_FORMAT)
+            backup_task['last_backup'] = datetime.strptime(response['time'], DATETIME_FORMAT)
             BackupRequester._save_backup_records(backup_records, node, path, response['time'],
                                                  response['file_size'], response['file_name'], backup_worker[0])
         elif response['status'] == 'ok' and response['time'] is None:
             backup_task['last_backup'] = datetime.now()
 
-        backup_task['status'] = BackupRequester.STATUS_NOT_RUNNING_BACKUP
+        backup_task['status'] = STATUS_NOT_RUNNING_BACKUP
 
         lock_backup_tasks.acquire()
         if (node, node_port, path) in backup_tasks:

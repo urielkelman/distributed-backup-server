@@ -1,7 +1,3 @@
-import json
-
-BYTES_AMOUNT_RESPONSE = 1024
-
 OK_RESPONSE = {
     "status": "ok"
 }
