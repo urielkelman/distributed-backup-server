@@ -20,21 +20,7 @@ class BackupScheduler:
         return time_delta.total_seconds() > backup_task['frequency']
 
     @staticmethod
-    def _check_and_launch_backups(backup_tasks, backups_records, lock_backup_tasks, thread_pool):
-        for node, node_port, path in backup_tasks:
-            backup_task = backup_tasks[(node, node_port, path)]
-            if backup_task['status'] == BackupScheduler.STATUS_NOT_RUNNING_BACKUP \
-                    and (backup_task['last_backup'] is None or BackupScheduler._backup_of_frequency(backup_task)):
-                backup_task['status'] = BackupScheduler.STATUS_RUNNING_BACKUP
-                backup_tasks[(node, node_port, path)] = backup_task
-                backup_request_process = Process(target=BackupRequester.dispatch_backup,
-                                                 args=(node, node_port, path, backup_tasks, backups_records,
-                                                       lock_backup_tasks,))
-                backup_request_process.start()
-
-    @staticmethod
-    def start_backups(backup_request_queue, backuper_registration_queue, listen_backlog, query_port, thread_pool_size):
-        request_thread_pool = Pool(processes=thread_pool_size)
+    def start_backups(backup_request_queue, backuper_registration_queue, listen_backlog, query_port):
         backups_record = Manager().dict()
         BackupScheduler._launch_query_controller(backups_record, listen_backlog, query_port)
         backup_tasks = Manager().dict()
@@ -43,8 +29,7 @@ class BackupScheduler:
         while True:
             if not backuper_registration_queue.empty():
                 backuper_registration_request = backuper_registration_queue.get()
-                worker_ip, worker_port = backuper_registration_request['requester_ip'][0], \
-                                         backuper_registration_request['worker_process_port']
+                worker_ip, worker_port = backuper_registration_request['requester_ip'][0], backuper_registration_request['worker_process_port']
                 if worker_ip in backups_by_worker:
                     backups_by_worker[worker_ip][worker_port] = 0
                 else:
@@ -71,7 +56,20 @@ class BackupScheduler:
                             backups_by_worker[node][node_port] -= 1
                             logging.info("Unregistered backup task for node: {} and path: {}".format(node, path))
 
-            BackupScheduler._check_and_launch_backups(backup_tasks, backups_record, lock_backup_tasks, request_thread_pool)
+            BackupScheduler._check_and_launch_backups(backup_tasks, backups_record, lock_backup_tasks)
+
+    @staticmethod
+    def _check_and_launch_backups(backup_tasks, backups_records, lock_backup_tasks):
+        for node, node_port, path in backup_tasks:
+            backup_task = backup_tasks[(node, node_port, path)]
+            if backup_task['status'] == BackupScheduler.STATUS_NOT_RUNNING_BACKUP \
+                    and (backup_task['last_backup'] is None or BackupScheduler._backup_of_frequency(backup_task)):
+                backup_task['status'] = BackupScheduler.STATUS_RUNNING_BACKUP
+                backup_tasks[(node, node_port, path)] = backup_task
+                backup_request_process = Process(target=BackupRequester.dispatch_backup,
+                                                 args=(node, node_port, path, backup_tasks, backups_records,
+                                                       lock_backup_tasks,))
+                backup_request_process.start()
 
     @staticmethod
     def _select_worker_for_backup_task(backups_by_worker):
@@ -79,7 +77,7 @@ class BackupScheduler:
         backups_by_port = backups_by_worker[worker_with_less_tasks]
         port_with_less_tasks = sorted(backups_by_port.items(), key=lambda x: x[1])[0][0]
         backups_by_worker[worker_with_less_tasks][port_with_less_tasks] += 1
-        logging.info("Backups by workers: {}".format(backups_by_worker))
+        logging.info("Backups by workers after assigning worker: {}".format(backups_by_worker))
         return worker_with_less_tasks, port_with_less_tasks
 
     @staticmethod

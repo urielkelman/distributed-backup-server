@@ -34,8 +34,7 @@ def main():
     config_params = parse_config_params()
 
     server = BackupServer(config_params["backup_requests_port"], config_params["listen_backlog"],
-                          config_params["node_register_port"], config_params["backup_info_port"],
-                          config_params["thread_pool_size"])
+                          config_params["node_register_port"], config_params["backup_info_port"])
     server.run()
 
 
