@@ -53,6 +53,7 @@ BACKUP_WORKERS_SEGMENT_DOCKER_COMPOSE = '''
       - WORKER_INITIAL_PORT=12345
       - WORKER_PROCESSES={1}
       - WORKER_LISTEN_BACKLOG=5
+      - LAST_BACKUP_FILES=10
     networks:
       - company_net
     volumes:

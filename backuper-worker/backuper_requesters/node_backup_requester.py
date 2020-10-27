@@ -1,12 +1,13 @@
 import logging
 import socket
+import os
 from pathlib import Path
 
 from network.tgz_file_receiver import TgzFileReceiver
 from network.json_receiver import JsonReceiver
 from network.json_sender import JsonSender
 
-LAST_BACKUP_FILES = 10
+LAST_BACKUP_FILES = os.environ['LAST_BACKUP_FILES']
 
 
 class NodeBackupRequester:
