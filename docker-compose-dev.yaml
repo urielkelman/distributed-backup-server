@@ -11,7 +11,6 @@ services:
       - NODE_REGISTER_PORT=12346
       - BACKUP_INFO_PORT=12347
       - SERVER_LISTEN_BACKLOG=5
-      - REQUEST_THREAD_POOL_SIZE=2
     networks:
       - company_net
       
@@ -27,6 +26,90 @@ services:
     volumes:
     - "./volumes/company_server_1:/files"
     
+  company_server_2:
+    container_name: company_server_2
+    image: company-server:latest
+    entrypoint: python3 /main.py
+    environment:
+      - BACKUP_REQUESTS_PORT=12345
+      - COMPANY_LISTEN_BACKLOG=5
+    networks:
+      - company_net
+    volumes:
+    - "./volumes/company_server_2:/files"
+    
+  company_server_3:
+    container_name: company_server_3
+    image: company-server:latest
+    entrypoint: python3 /main.py
+    environment:
+      - BACKUP_REQUESTS_PORT=12345
+      - COMPANY_LISTEN_BACKLOG=5
+    networks:
+      - company_net
+    volumes:
+    - "./volumes/company_server_3:/files"
+    
+  company_server_4:
+    container_name: company_server_4
+    image: company-server:latest
+    entrypoint: python3 /main.py
+    environment:
+      - BACKUP_REQUESTS_PORT=12345
+      - COMPANY_LISTEN_BACKLOG=5
+    networks:
+      - company_net
+    volumes:
+    - "./volumes/company_server_4:/files"
+    
+  company_server_5:
+    container_name: company_server_5
+    image: company-server:latest
+    entrypoint: python3 /main.py
+    environment:
+      - BACKUP_REQUESTS_PORT=12345
+      - COMPANY_LISTEN_BACKLOG=5
+    networks:
+      - company_net
+    volumes:
+    - "./volumes/company_server_5:/files"
+    
+  company_server_6:
+    container_name: company_server_6
+    image: company-server:latest
+    entrypoint: python3 /main.py
+    environment:
+      - BACKUP_REQUESTS_PORT=12345
+      - COMPANY_LISTEN_BACKLOG=5
+    networks:
+      - company_net
+    volumes:
+    - "./volumes/company_server_6:/files"
+    
+  company_server_7:
+    container_name: company_server_7
+    image: company-server:latest
+    entrypoint: python3 /main.py
+    environment:
+      - BACKUP_REQUESTS_PORT=12345
+      - COMPANY_LISTEN_BACKLOG=5
+    networks:
+      - company_net
+    volumes:
+    - "./volumes/company_server_7:/files"
+    
+  company_server_8:
+    container_name: company_server_8
+    image: company-server:latest
+    entrypoint: python3 /main.py
+    environment:
+      - BACKUP_REQUESTS_PORT=12345
+      - COMPANY_LISTEN_BACKLOG=5
+    networks:
+      - company_net
+    volumes:
+    - "./volumes/company_server_8:/files"
+    
   backuper_worker_1:
     container_name: backuper_worker_1
     image: backuper-worker:latest
@@ -36,12 +119,48 @@ services:
       - SERVER_NODE_REGISTER_PORT=12346
       - WORKER_ALIAS=backuper_worker_1
       - WORKER_INITIAL_PORT=12345
-      - WORKER_PROCESSES=1
+      - WORKER_PROCESSES=2
       - WORKER_LISTEN_BACKLOG=5
     networks:
       - company_net
     volumes:
     - "./volumes/backupers/worker_1:/backups"
+    depends_on:
+      - server
+      
+  backuper_worker_2:
+    container_name: backuper_worker_2
+    image: backuper-worker:latest
+    entrypoint: python3 /main.py
+    environment:
+      - SERVER_IP=backup_server
+      - SERVER_NODE_REGISTER_PORT=12346
+      - WORKER_ALIAS=backuper_worker_2
+      - WORKER_INITIAL_PORT=12345
+      - WORKER_PROCESSES=2
+      - WORKER_LISTEN_BACKLOG=5
+    networks:
+      - company_net
+    volumes:
+    - "./volumes/backupers/worker_2:/backups"
+    depends_on:
+      - server
+      
+  backuper_worker_3:
+    container_name: backuper_worker_3
+    image: backuper-worker:latest
+    entrypoint: python3 /main.py
+    environment:
+      - SERVER_IP=backup_server
+      - SERVER_NODE_REGISTER_PORT=12346
+      - WORKER_ALIAS=backuper_worker_3
+      - WORKER_INITIAL_PORT=12345
+      - WORKER_PROCESSES=2
+      - WORKER_LISTEN_BACKLOG=5
+    networks:
+      - company_net
+    volumes:
+    - "./volumes/backupers/worker_3:/backups"
     depends_on:
       - server
       

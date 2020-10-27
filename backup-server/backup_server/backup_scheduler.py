@@ -1,7 +1,7 @@
 import logging
 from datetime import datetime
 from multiprocessing import Process, Manager, Lock
-
+from hashlib import md5
 from requesters.backup_dispatcher import BackupDispatcher
 
 REGISTER_TYPE = 'register'
@@ -42,7 +42,8 @@ class BackupScheduler:
                         'status': STATUS_NOT_RUNNING_BACKUP,
                         'last_backup': None,
                         'frequency': backup_request['frequency'],
-                        'backup_worker': BackupScheduler._select_worker_for_backup_task(backups_by_worker)
+                        'backup_worker': BackupScheduler._select_worker_for_backup_task(backups_by_worker),
+                        'hash_id': md5(bytes(backup_request['path'].replace("/", "") + str(backup_request['node']) + str(backup_request['node_port']), encoding='utf-8')).hexdigest()
                     }
                 else:
                     for (node, node_port, path) in backup_tasks:
@@ -50,8 +51,8 @@ class BackupScheduler:
                             lock_backup_tasks.acquire()
                             del backup_tasks[(node, node_port, path)]
                             lock_backup_tasks.release()
-                            backups_by_worker[node][node_port] -= 1
                             logging.info("Unregistered backup task for node: {} and path: {}".format(node, path))
+                            break
 
             BackupScheduler._check_and_launch_backups(backup_tasks, backup_records, lock_backup_tasks)
 

@@ -25,9 +25,9 @@ class CompanyBackupMiddleware:
             new_compression, compressed_file_path = self._file_compressor.compress_files(backup_request['path'],
                                                                                          connection.getpeername()[0])
             if new_compression:
-                self._send_backup_to_server(connection, compressed_file_path)
+                self._send_backup_to_server(connection, compressed_file_path, backup_request['id'])
             else:
-                JsonSender.send_json(connection, responses.UNNECESSARY_BACKUP_RESPONSE)
+                JsonSender.send_json(connection, responses.unnecessary_backup_response(backup_request['id']))
 
         except FileNotFoundError:
             traceback.print_exc()
@@ -48,7 +48,7 @@ class CompanyBackupMiddleware:
             backup_request = JsonReceiver.receive_json(connection)
             self._process_backup_request(connection, backup_request)
 
-    def _send_backup_to_server(self, connection, compressed_file_path):
+    def _send_backup_to_server(self, connection, compressed_file_path, id):
         logging.info("New compression. Starting to send file.")
-        JsonSender.send_json(connection, responses.START_TRANSFER_RESPONSE)
+        JsonSender.send_json(connection, responses.start_transfer_response(id))
         TgzFileSender.send_file(connection, compressed_file_path)

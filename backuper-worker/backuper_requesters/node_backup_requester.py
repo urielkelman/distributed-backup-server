@@ -11,9 +11,10 @@ LAST_BACKUP_FILES = 10
 
 class NodeBackupRequester:
     @staticmethod
-    def _generate_backup_request(path):
+    def _generate_backup_request(path, id):
         return {
-            'path': path
+            'path': path,
+            'id': id
         }
 
     @staticmethod
@@ -27,8 +28,8 @@ class NodeBackupRequester:
             Path(file_paths[-1]).unlink()
 
     @staticmethod
-    def generate_backup(node, node_port, path):
-        logging.info("Starting to generate backup for node {} with port {} for path {}".format(node, node_port, path))
+    def generate_backup(node, node_port, path, id):
+        logging.info("Starting to generate backup for node {} with port {} for path {} and id {}.".format(node, node_port, path, id))
         dir_path_str = "/backups/" + node + "_" + path.replace("/", "_")[1:]
         dir_path = Path(dir_path_str)
         if not dir_path.is_dir():
@@ -36,7 +37,7 @@ class NodeBackupRequester:
             logging.info("Created new directory for backups: {}".format(dir_path_str))
 
         connection = socket.create_connection((node, node_port))
-        backup_request = NodeBackupRequester._generate_backup_request(path)
+        backup_request = NodeBackupRequester._generate_backup_request(path, id)
         JsonSender.send_json(connection, backup_request)
 
         response = JsonReceiver.receive_json(connection)

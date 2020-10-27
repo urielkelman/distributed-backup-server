@@ -69,9 +69,9 @@ networks:
 
 
 def generate_file(number_of_company_servers, number_of_backup_workers,
-                  number_of_processes_by_worker, request_thread_pool_size):
+                  number_of_processes_by_worker):
     with open(FILE_NAME, "w") as docker_compose_file:
-        docker_compose_file.write(INITIAL_SEGMENT_DOCKER_COMPOSE.format(request_thread_pool_size))
+        docker_compose_file.write(INITIAL_SEGMENT_DOCKER_COMPOSE)
         for x in range(number_of_company_servers):
             docker_compose_file.write(COMPANY_SEGMENT_DOCKER_COMPOSE.format(x + 1))
         for x in range(number_of_backup_workers):
@@ -81,16 +81,15 @@ def generate_file(number_of_company_servers, number_of_backup_workers,
 
 
 def main():
-    if len(sys.argv) != 9 or sys.argv[1] != '-c' or sys.argv[3] != '-w' or sys.argv[5] != '-wp' or sys.argv[7] != '-tps':
+    if len(sys.argv) != 7 or sys.argv[1] != '-c' or sys.argv[3] != '-w' or sys.argv[5] != '-wp':
         print(USAGE_MESSAGE)
     else:
         try:
             number_of_company_servers = int(sys.argv[2])
             number_of_backup_workers = int(sys.argv[4])
             number_of_processes_by_worker = int(sys.argv[6])
-            request_thread_pool_size = int(sys.argv[8])
             generate_file(number_of_company_servers, number_of_backup_workers,
-                          number_of_processes_by_worker, request_thread_pool_size)
+                          number_of_processes_by_worker)
         except ValueError:
             print(USAGE_MESSAGE)
 

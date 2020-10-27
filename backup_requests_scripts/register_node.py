@@ -27,7 +27,8 @@ def main():
     connection.sendall(padded_data_bytes_size)
     print("Going to send {} bytes".format(len(data_bytes)))
     connection.sendall(data_bytes)
-    response = connection.recv(2048).rstrip()
+    connection.recv(100).rstrip()
+    response = connection.recv(2048).rstrip().decode('utf-8')
     print(response)
 
 

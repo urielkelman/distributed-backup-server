@@ -17,12 +17,13 @@ class BackupController:
         self._active_external_request_connection = None
 
     @staticmethod
-    def _successful_backup_response(timestamp, file_size, file_name):
+    def _successful_backup_response(timestamp, file_size, file_name, id):
         return {
             'status': 'ok',
             'time': timestamp,
             'file_size': file_size,
-            'file_name': file_name
+            'file_name': file_name,
+            'id': id
         }
 
     @staticmethod
@@ -33,10 +34,11 @@ class BackupController:
         }
 
     @staticmethod
-    def _unnecessary_backup_response():
+    def _unnecessary_backup_response(id):
         return {
             'status': 'ok',
-            'time': None
+            'time': None,
+            'id': id
         }
 
     def _accept_new_backup_request(self):
@@ -56,14 +58,15 @@ class BackupController:
             has_backuped, timestamp, file_size, file_name, error = \
                 NodeBackupRequester.generate_backup(backup_request['node'],
                                                     backup_request['node_port'],
-                                                    backup_request['path'])
+                                                    backup_request['path'],
+                                                    backup_request['id'])
 
             if has_backuped:
-                self._send_response(self._successful_backup_response(timestamp, file_size, file_name))
+                self._send_response(self._successful_backup_response(timestamp, file_size, file_name, backup_request['id']))
             elif error:
                 self._send_response(self._error_response(error))
             else:
-                self._send_response(self._unnecessary_backup_response())
+                self._send_response(self._unnecessary_backup_response(backup_request['id']))
 
         except OSError:
             logging.error("OS Error ocurred. Pid: {}".format(os.getpid()))

@@ -11,11 +11,12 @@ DATETIME_FORMAT = "%m/%d/%Y-%H:%M:%S"
 
 class BackupDispatcher:
     @staticmethod
-    def _generate_backup_request(node, node_port, path):
+    def _generate_backup_request(node, node_port, path, id):
         return {
             'node': node,
             'node_port': node_port,
-            'path': path
+            'path': path,
+            'id': id
         }
 
     @staticmethod
@@ -46,7 +47,7 @@ class BackupDispatcher:
                      format(node, node_port, path, str(backup_worker)))
 
         connection = socket.create_connection((backup_worker[0], backup_worker[1]))
-        backup_request = BackupDispatcher._generate_backup_request(node, node_port, path)
+        backup_request = BackupDispatcher._generate_backup_request(node, node_port, path, backup_task['hash_id'])
         JsonSender.send_json(connection, backup_request)
         response = JsonReceiver.receive_json(connection)
 

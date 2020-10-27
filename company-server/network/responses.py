@@ -13,16 +13,22 @@ UNKNOWN_ERROR_RESPONSE = {
 }
 
 PATH_NOT_FOUND_RESPONSE = {
-        "status": "ERROR",
-        "cause": "Invalid path."
+    "status": "ERROR",
+    "cause": "Invalid path."
 }
 
-UNNECESSARY_BACKUP_RESPONSE = {
-    "status": "OK",
-    "transfer": False
-}
 
-START_TRANSFER_RESPONSE = {
-    "status": "OK",
-    "transfer": True
-}
+def unnecessary_backup_response(id):
+    return {
+        "status": "OK",
+        "transfer": False,
+        "id": id
+    }
+
+
+def start_transfer_response(id):
+    return {
+        "status": "OK",
+        "transfer": True,
+        "id": id
+    }
