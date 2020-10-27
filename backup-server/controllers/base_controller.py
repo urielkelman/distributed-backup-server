@@ -9,13 +9,14 @@ from network.json_sender import JsonSender
 
 class BaseRegistrationController:
     def __init__(self, port: int, listen_backlog: int):
+        self._port = port
         self._external_requests_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self._external_requests_socket.bind(('', port))
         self._external_requests_socket.listen(listen_backlog)
         self._active_external_request_connection = None
 
     def _accept_new_registration_request(self):
-        logging.info("Proceed to receive new external request.")
+        logging.info("Proceed to receive new external request at port {}.".format(self._port))
         connection, address = self._external_requests_socket.accept()
         logging.info("Address: {}".format(address))
         external_request = JsonReceiver.receive_json(connection)

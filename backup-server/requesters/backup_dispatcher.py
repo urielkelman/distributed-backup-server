@@ -9,7 +9,7 @@ STATUS_NOT_RUNNING_BACKUP = 'STATUS_NOT_RUNNING_BACKUP'
 DATETIME_FORMAT = "%m/%d/%Y-%H:%M:%S"
 
 
-class BackupRequester:
+class BackupDispatcher:
     @staticmethod
     def _generate_backup_request(node, node_port, path):
         return {
@@ -46,14 +46,14 @@ class BackupRequester:
                      format(node, node_port, path, str(backup_worker)))
 
         connection = socket.create_connection((backup_worker[0], backup_worker[1]))
-        backup_request = BackupRequester._generate_backup_request(node, node_port, path)
+        backup_request = BackupDispatcher._generate_backup_request(node, node_port, path)
         JsonSender.send_json(connection, backup_request)
         response = JsonReceiver.receive_json(connection)
 
         if response['status'] == 'ok' and response['time']:
             backup_task['last_backup'] = datetime.strptime(response['time'], DATETIME_FORMAT)
-            BackupRequester._save_backup_records(backup_records, node, path, response['time'],
-                                                 response['file_size'], response['file_name'], backup_worker[0])
+            BackupDispatcher._save_backup_records(backup_records, node, path, response['time'],
+                                                  response['file_size'], response['file_name'], backup_worker[0])
         elif response['status'] == 'ok' and response['time'] is None:
             backup_task['last_backup'] = datetime.now()
 

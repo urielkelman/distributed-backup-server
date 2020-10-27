@@ -1,9 +1,8 @@
 import logging
 from datetime import datetime
-from multiprocessing import Process, Manager, Lock, Pool
+from multiprocessing import Process, Manager, Lock
 
-from requesters.backup_requester import BackupRequester
-from controllers.query_backups_controller import QueryBackupsController
+from requesters.backup_dispatcher import BackupDispatcher
 
 REGISTER_TYPE = 'register'
 UNREGISTER_TYPE = 'unregister'
@@ -19,15 +18,13 @@ class BackupScheduler:
         return time_delta.total_seconds() > backup_task['frequency']
 
     @staticmethod
-    def start_backups(backup_request_queue, backuper_registration_queue, listen_backlog, query_port):
-        backups_record = Manager().dict()
-        BackupScheduler._launch_query_controller(backups_record, listen_backlog, query_port)
+    def start_backups(backup_request_queue, worker_registration_queue, backup_records):
         backup_tasks = Manager().dict()
         lock_backup_tasks = Lock()
         backups_by_worker = {}
         while True:
-            if not backuper_registration_queue.empty():
-                backuper_registration_request = backuper_registration_queue.get()
+            if not worker_registration_queue.empty():
+                backuper_registration_request = worker_registration_queue.get()
                 worker_ip, worker_port = backuper_registration_request['requester_ip'][0], \
                                          backuper_registration_request['worker_process_port']
                 if worker_ip in backups_by_worker:
@@ -56,7 +53,7 @@ class BackupScheduler:
                             backups_by_worker[node][node_port] -= 1
                             logging.info("Unregistered backup task for node: {} and path: {}".format(node, path))
 
-            BackupScheduler._check_and_launch_backups(backup_tasks, backups_record, lock_backup_tasks)
+            BackupScheduler._check_and_launch_backups(backup_tasks, backup_records, lock_backup_tasks)
 
     @staticmethod
     def _check_and_launch_backups(backup_tasks, backups_records, lock_backup_tasks):
@@ -66,7 +63,7 @@ class BackupScheduler:
                     and (backup_task['last_backup'] is None or BackupScheduler._backup_of_frequency(backup_task)):
                 backup_task['status'] = STATUS_RUNNING_BACKUP
                 backup_tasks[(node, node_port, path)] = backup_task
-                backup_request_process = Process(target=BackupRequester.dispatch_backup,
+                backup_request_process = Process(target=BackupDispatcher.dispatch_backup,
                                                  args=(node, node_port, path, backup_tasks, backups_records,
                                                        lock_backup_tasks,))
                 backup_request_process.start()
@@ -80,8 +77,3 @@ class BackupScheduler:
         logging.info("Backups by workers after assigning worker: {}".format(backups_by_worker))
         return worker_with_less_tasks, port_with_less_tasks
 
-    @staticmethod
-    def _launch_query_controller(backup_records, listen_backlog, query_port):
-        query_controller = QueryBackupsController(query_port, listen_backlog, backup_records)
-        query_controller_process = Process(target=query_controller.listen_to_queries)
-        query_controller_process.start()

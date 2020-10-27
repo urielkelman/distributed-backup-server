@@ -6,8 +6,7 @@ from pathlib import Path
 
 
 class FileCompressor:
-    def __init__(self, files_to_compress: int):
-        logging.info("Initializing file compressor with {} files.".format(files_to_compress))
+    def __init__(self):
         self._last_backup_info_by_server_and_path = {}
 
     def _search_files_to_compress(self, parent_path, files_candidates):

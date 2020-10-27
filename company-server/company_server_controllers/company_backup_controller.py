@@ -11,12 +11,12 @@ from network.json_sender import JsonSender
 
 
 class CompanyBackupMiddleware:
-    def __init__(self, port: int, listen_backlog: int, files_to_compress: int):
+    def __init__(self, port: int, listen_backlog: int):
         logging.info("Initializing backup middleware.")
         self._backup_requests_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self._backup_requests_socket.bind(('', port))
         self._backup_requests_socket.listen(listen_backlog)
-        self._file_compressor = FileCompressor(files_to_compress)
+        self._file_compressor = FileCompressor()
         self._handle_backup_requests()
 
     def _process_backup_request(self, connection, backup_request):
