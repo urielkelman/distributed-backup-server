@@ -1,7 +1,7 @@
 import logging
 
 from controllers.base_controller import BaseRegistrationController
-from multiprocessing import Queue, Process, Manager
+from multiprocessing import Queue, Process, Manager, Lock
 from backup_server.backup_scheduler import BackupScheduler
 from controllers.query_backups_controller import QueryBackupsController
 
@@ -26,23 +26,23 @@ class BackupServer:
                                          args=(backup_request_queue, self._backup_request_port, self._listen_backlog))
         backup_process_process.start()
 
-    def _launch_backup_scheduler(self, backup_request_queue, worker_registration_queue, backups_record):
+    def _launch_backup_scheduler(self, backup_request_queue, worker_registration_queue, lock_backup_files):
         backup_scheduler_process = Process(target=BackupScheduler.start_backups, args=(backup_request_queue,
                                                                                        worker_registration_queue,
-                                                                                       backups_record,))
+                                                                                       lock_backup_files,))
         backup_scheduler_process.start()
 
-    def _launch_query_controller(self, backup_records, query_port):
-        query_controller = QueryBackupsController(query_port, self._listen_backlog, backup_records)
+    def _launch_query_controller(self, lock_backup_file):
+        query_controller = QueryBackupsController(self._backup_info_port, self._listen_backlog, lock_backup_file)
         query_controller_process = Process(target=query_controller.listen_to_queries)
         query_controller_process.start()
 
     def run(self):
-        backups_record = Manager().dict()
         backup_request_queue = Queue()
         backuper_registration_queue = Queue()
-        self._launch_query_controller(backups_record, self._backup_info_port)
-        self._launch_backup_scheduler(backup_request_queue, backuper_registration_queue, backups_record)
+        lock_backup_file = Lock()
+        self._launch_query_controller(lock_backup_file)
+        self._launch_backup_scheduler(backup_request_queue, backuper_registration_queue, lock_backup_file)
         self._launch_backup_controller(backup_request_queue)
         while True:
             backuper_registration_request = self._backuper_registration_controller.get_registration_request()

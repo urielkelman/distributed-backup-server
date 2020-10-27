@@ -9,7 +9,7 @@ from network.json_sender import JsonSender
 STATUS_NOT_RUNNING_BACKUP = 'STATUS_NOT_RUNNING_BACKUP'
 DATETIME_FORMAT = "%m/%d/%Y-%H:%M:%S"
 
-BACKUPS_FILE = "/backups/backups.csv"
+BACKUPS_FOLDER = "/backups/"
 
 class BackupDispatcher:
     @staticmethod
@@ -22,35 +22,18 @@ class BackupDispatcher:
         }
 
     @staticmethod
-    def _save_backup_records(backup_records, node, path, timestamp, file_size, file_name, worker, lock_backup_file):
-        backup_record = [{
-            'timestamp': timestamp,
-            'file_size': file_size,
-            'file_name': file_name,
-            'worker_ip': worker
-        }]
-        if node not in backup_records:
-            backup_records[node] = {
-                path: backup_record
-            }
-        else:
-            node_records = backup_records[node]
-            if path not in node_records:
-                node_records[path] = backup_record
-            else:
-                node_records[path] += backup_record
-            backup_records[node] = node_records
-
+    def _save_backup_records(node, path, timestamp, file_size, file_name, worker, lock_backup_file):
+        backups_file_name = BACKUPS_FOLDER + node + path.replace("/", "_") + ".csv"
         lock_backup_file.acquire()
         mode = "w+"
-        if Path(BACKUPS_FILE).is_file():
+        if Path(backups_file_name).is_file():
             mode = "a+"
-        with open(BACKUPS_FILE, mode) as file:
-            file.write("{},{},{},{},{}\n".format(node, path, timestamp, file_size, file_name, worker))
+        with open(backups_file_name, mode) as file:
+            file.write("{},{},{},{}\n".format(timestamp, file_size, file_name, worker))
         lock_backup_file.release()
 
     @staticmethod
-    def dispatch_backup(node, node_port, path, backup_tasks, backup_records, lock_backup_tasks, lock_backup_file):
+    def dispatch_backup(node, node_port, path, backup_tasks, lock_backup_tasks, lock_backup_file):
         backup_task = backup_tasks[(node, node_port, path)]
         backup_worker = backup_task['backup_worker']
         logging.info("Launched backup request for node {} at port {} for path {} in worker: {}.". \
@@ -63,7 +46,7 @@ class BackupDispatcher:
 
         if response['status'] == 'ok' and response['time']:
             backup_task['last_backup'] = datetime.strptime(response['time'], DATETIME_FORMAT)
-            BackupDispatcher._save_backup_records(backup_records, node, path, response['time'],
+            BackupDispatcher._save_backup_records(node, path, response['time'],
                                                   response['file_size'], response['file_name'],
                                                   backup_worker[0], lock_backup_file)
         elif response['status'] == 'ok' and response['time'] is None:

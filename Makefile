@@ -15,6 +15,8 @@ docker-compose-up: docker-image
 .PHONY: docker-compose-up
 
 docker-compose-down:
+	sudo rm -r ./volumes/backupers/*
+	sudo rm -r ./volumes/backup_server
 	docker-compose -f docker-compose-dev.yaml stop -t 1
 	docker-compose -f docker-compose-dev.yaml down
 .PHONY: docker-compose-down
