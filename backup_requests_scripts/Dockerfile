@@ -1,6 +1,6 @@
-FROM ubuntu:latest
+FROM python:3.8
 RUN mkdir -p /scripts
 WORKDIR scripts
-RUN apt-get update && apt-get install python3 -y && apt-get install iputils-ping -y
 COPY . .
+RUN pip install tabulate
 ENTRYPOINT ["/bin/bash"]

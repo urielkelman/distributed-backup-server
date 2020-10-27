@@ -21,6 +21,7 @@ class BackupScheduler:
     def start_backups(backup_request_queue, worker_registration_queue, backup_records):
         backup_tasks = Manager().dict()
         lock_backup_tasks = Lock()
+        lock_backup_file = Lock()
         backups_by_worker = {}
         while True:
             if not worker_registration_queue.empty():
@@ -54,10 +55,10 @@ class BackupScheduler:
                             logging.info("Unregistered backup task for node: {} and path: {}".format(node, path))
                             break
 
-            BackupScheduler._check_and_launch_backups(backup_tasks, backup_records, lock_backup_tasks)
+            BackupScheduler._check_and_launch_backups(backup_tasks, backup_records, lock_backup_tasks, lock_backup_file)
 
     @staticmethod
-    def _check_and_launch_backups(backup_tasks, backups_records, lock_backup_tasks):
+    def _check_and_launch_backups(backup_tasks, backups_records, lock_backup_tasks, lock_backup_file):
         for node, node_port, path in backup_tasks:
             backup_task = backup_tasks[(node, node_port, path)]
             if backup_task['status'] == STATUS_NOT_RUNNING_BACKUP \
@@ -66,7 +67,7 @@ class BackupScheduler:
                 backup_tasks[(node, node_port, path)] = backup_task
                 backup_request_process = Process(target=BackupDispatcher.dispatch_backup,
                                                  args=(node, node_port, path, backup_tasks, backups_records,
-                                                       lock_backup_tasks,))
+                                                       lock_backup_tasks,lock_backup_file,))
                 backup_request_process.start()
 
     @staticmethod

@@ -23,6 +23,8 @@ services:
       - SERVER_LISTEN_BACKLOG=5
     networks:
       - company_net
+    volumes:
+    - "./volumes/backup_server:/backups"
       '''
 
 COMPANY_SEGMENT_DOCKER_COMPOSE = '''

@@ -1,6 +1,7 @@
 import logging
 import socket
 from datetime import datetime
+from pathlib import Path
 
 from network.json_receiver import JsonReceiver
 from network.json_sender import JsonSender
@@ -8,6 +9,7 @@ from network.json_sender import JsonSender
 STATUS_NOT_RUNNING_BACKUP = 'STATUS_NOT_RUNNING_BACKUP'
 DATETIME_FORMAT = "%m/%d/%Y-%H:%M:%S"
 
+BACKUPS_FILE = "/backups/backups.csv"
 
 class BackupDispatcher:
     @staticmethod
@@ -20,7 +22,7 @@ class BackupDispatcher:
         }
 
     @staticmethod
-    def _save_backup_records(backup_records, node, path, timestamp, file_size, file_name, worker):
+    def _save_backup_records(backup_records, node, path, timestamp, file_size, file_name, worker, lock_backup_file):
         backup_record = [{
             'timestamp': timestamp,
             'file_size': file_size,
@@ -39,8 +41,16 @@ class BackupDispatcher:
                 node_records[path] += backup_record
             backup_records[node] = node_records
 
+        lock_backup_file.acquire()
+        mode = "w+"
+        if Path(BACKUPS_FILE).is_file():
+            mode = "a+"
+        with open(BACKUPS_FILE, mode) as file:
+            file.write("{},{},{},{},{}\n".format(node, path, timestamp, file_size, file_name, worker))
+        lock_backup_file.release()
+
     @staticmethod
-    def dispatch_backup(node, node_port, path, backup_tasks, backup_records, lock_backup_tasks):
+    def dispatch_backup(node, node_port, path, backup_tasks, backup_records, lock_backup_tasks, lock_backup_file):
         backup_task = backup_tasks[(node, node_port, path)]
         backup_worker = backup_task['backup_worker']
         logging.info("Launched backup request for node {} at port {} for path {} in worker: {}.". \
@@ -54,7 +64,8 @@ class BackupDispatcher:
         if response['status'] == 'ok' and response['time']:
             backup_task['last_backup'] = datetime.strptime(response['time'], DATETIME_FORMAT)
             BackupDispatcher._save_backup_records(backup_records, node, path, response['time'],
-                                                  response['file_size'], response['file_name'], backup_worker[0])
+                                                  response['file_size'], response['file_name'],
+                                                  backup_worker[0], lock_backup_file)
         elif response['status'] == 'ok' and response['time'] is None:
             backup_task['last_backup'] = datetime.now()
 

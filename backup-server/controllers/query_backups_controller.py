@@ -16,9 +16,12 @@ class QueryBackupsController:
         while True:
             connection, address = self._external_requests_socket.accept()
             query_request = JsonReceiver.receive_json(connection)
-            if query_request['type'] == 'query':
-                logging.info("Answering query controller correctly.")
-                JsonSender.send_json(connection, self._backups.copy())
-            else:
+            try:
+                if query_request['type'] == 'query':
+                    logging.info("Answering query controller correctly.")
+                    JsonSender.send_json(connection, self._backups.copy()[query_request["node"]][query_request["path"]])
+                else:
+                    raise ValueError
+            except ValueError:
                 logging.info("Answering query controller with error message.")
                 JsonSender.send_json(connection, {'status': 'ERROR'})

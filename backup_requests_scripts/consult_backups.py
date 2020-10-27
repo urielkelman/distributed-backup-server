@@ -1,5 +1,7 @@
 import json
 import socket
+import sys
+import tabulate
 
 BYTES_AMOUNT_REQUEST_SIZE_INDICATION = 20
 
@@ -12,7 +14,9 @@ def padd_to_specific_size(bytes_data, size):
 
 def main():
     query = bytes(json.dumps({
-        "type": "query"
+        "type": "query",
+        "node": sys.argv[1],
+        "path": sys.argv[2]
     }), encoding='utf-8')
 
     connection = socket.create_connection(("backup_server", 12347))
@@ -27,9 +31,11 @@ def main():
         readed += connection.recv(response_size).decode('utf-8')
 
     query_result = json.loads(readed)
-    print("Result: ")
-    print(query_result)
-
+    headers = ["TIMESTAMP", "FILE_SIZE", "FILE_NAME", "WORKER_IP"]
+    rows = [x.values() for x in query_result]
+    print("\n\n")
+    print(tabulate.tabulate(rows, headers))
+    print("\n\n")
 
 if __name__ == "__main__":
     main()
