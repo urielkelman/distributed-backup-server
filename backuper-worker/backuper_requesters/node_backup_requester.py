@@ -7,7 +7,7 @@ from network.tgz_file_receiver import TgzFileReceiver
 from network.json_receiver import JsonReceiver
 from network.json_sender import JsonSender
 
-LAST_BACKUP_FILES = os.environ['LAST_BACKUP_FILES']
+LAST_BACKUP_FILES = int(os.environ['LAST_BACKUP_FILES'])
 
 
 class NodeBackupRequester:
