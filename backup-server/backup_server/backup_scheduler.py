@@ -15,7 +15,7 @@ class BackupScheduler:
     def _backup_of_frequency(backup_task):
         now = datetime.now()
         time_delta = now - backup_task['last_backup']
-        return time_delta.total_seconds() > backup_task['frequency']
+        return time_delta.total_seconds() / 60 > backup_task['frequency']
 
     @staticmethod
     def start_backups(backup_request_queue, worker_registration_queue, backup_records):

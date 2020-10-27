@@ -15,7 +15,7 @@ def main():
         "node": sys.argv[1],
         "node_port": int(sys.argv[2]),
         "path": sys.argv[3],
-        "frequency": int(sys.argv[4])
+        "frequency": float(sys.argv[4])
     }
 
     BYTES_AMOUNT_REQUEST_SIZE_INDICATION = 20

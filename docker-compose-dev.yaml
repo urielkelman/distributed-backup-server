@@ -119,48 +119,12 @@ services:
       - SERVER_NODE_REGISTER_PORT=12346
       - WORKER_ALIAS=backuper_worker_1
       - WORKER_INITIAL_PORT=12345
-      - WORKER_PROCESSES=2
+      - WORKER_PROCESSES=1
       - WORKER_LISTEN_BACKLOG=5
     networks:
       - company_net
     volumes:
     - "./volumes/backupers/worker_1:/backups"
-    depends_on:
-      - server
-      
-  backuper_worker_2:
-    container_name: backuper_worker_2
-    image: backuper-worker:latest
-    entrypoint: python3 /main.py
-    environment:
-      - SERVER_IP=backup_server
-      - SERVER_NODE_REGISTER_PORT=12346
-      - WORKER_ALIAS=backuper_worker_2
-      - WORKER_INITIAL_PORT=12345
-      - WORKER_PROCESSES=2
-      - WORKER_LISTEN_BACKLOG=5
-    networks:
-      - company_net
-    volumes:
-    - "./volumes/backupers/worker_2:/backups"
-    depends_on:
-      - server
-      
-  backuper_worker_3:
-    container_name: backuper_worker_3
-    image: backuper-worker:latest
-    entrypoint: python3 /main.py
-    environment:
-      - SERVER_IP=backup_server
-      - SERVER_NODE_REGISTER_PORT=12346
-      - WORKER_ALIAS=backuper_worker_3
-      - WORKER_INITIAL_PORT=12345
-      - WORKER_PROCESSES=2
-      - WORKER_LISTEN_BACKLOG=5
-    networks:
-      - company_net
-    volumes:
-    - "./volumes/backupers/worker_3:/backups"
     depends_on:
       - server
       
